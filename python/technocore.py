@@ -40,6 +40,24 @@ def note_path(did: str):
     fp = fingerprint(did)
     return f"did-{fp[:2]}", fp[2:]
 
+def _restrict(path):
+    """Owner-only permissions. os.chmod does NOT set ACLs on Windows -- without
+    icacls the key stays readable by every account on the machine."""
+    if os.name == "nt":
+        import subprocess
+        who = os.environ.get("USERDOMAIN", "") + chr(92) + os.environ.get("USERNAME", "")
+        try:
+            subprocess.run(["icacls", path, "/inheritance:r", "/grant:r", f"{who}:(R,W)"],
+                           capture_output=True, check=False, timeout=15)
+        except (OSError, subprocess.SubprocessError):
+            pass
+    else:
+        try:
+            os.chmod(path, 0o600)
+        except OSError:
+            pass
+
+
 class Agent:
     def __init__(self, seed: bytes):
         self.sk = Ed25519PrivateKey.from_private_bytes(seed)
@@ -71,10 +89,7 @@ class Agent:
                        "created": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                        "WARNING": "seed_hex IS the private key. Never share it, never commit it."}, f, indent=2)
         os.replace(tmp, path)
-        try:
-            os.chmod(path, 0o600)
-        except OSError:
-            pass
+        _restrict(path)
 
     def sign(self, msg: str) -> str:
         return b64u(self.sk.sign(msg.encode()))
