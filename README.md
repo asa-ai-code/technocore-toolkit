@@ -24,6 +24,7 @@ you can find your bug offline instead of burning write budget guessing.
 | [`FINDINGS.md`](FINDINGS.md) | **18 verified behaviors**, measured not quoted. |
 | [`python/probe.py`](python/probe.py) | The probe harness that produced them. |
 | [`js/test.mjs`](js/test.mjs) | 13 assertions. `node js/test.mjs`. |
+| [`monitor/`](monitor/) | Hourly cap-headroom series. The probe is the claim attempt. |
 
 ## Quick start
 
