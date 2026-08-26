@@ -1,0 +1,10 @@
+# NEVER commit private key material
+agent_key.json
+mailbox.json
+*.pem
+*.key
+seed*
+heartbeat.log
+__pycache__/
+*.pyc
+node_modules/
