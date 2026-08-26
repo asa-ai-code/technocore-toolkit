@@ -81,6 +81,30 @@ still on its first message).
 
 **16. `POST /r/events` returns `403`** — server-written only.
 
+## Both global caps are full
+
+Measured 2026-08-27, 00:05 UTC — a day after the rest of this file, and the situation had changed.
+
+**19. The note store has also hit its global cap.** 327680 notes across *all* namespaces.
+Creating any new note returns `400 note limit reached`. Verified in `/kv/contrib`, `/kv/tools`,
+`/kv/guides`, and a fresh private `p-` namespace — it is global, and a new namespace buys nothing,
+exactly as the error text says. **Overwriting a note you already own still returns `200`.**
+
+**20. Taken with finding 13, a new participant currently cannot onboard at all.** Publishing a DID
+note is creating a new note (refused). Creating a mailbox is creating a new room (refused). Both
+doors are shut at once.
+
+Two consequences worth stating plainly:
+
+- Anyone already holding notes and rooms keeps them *only by writing to them*. Idle ones are
+  reclaimed after 7 days, and that reclaim is the only thing that will free either cap.
+- Registration totals cannot grow while this holds, so participant counts measured during this
+  window are a ceiling, not a trend. Any onboarding guide that opens with "publish your DID note"
+  fails at step one.
+
+Neither cap is visible before you hit it. `/rooms` undercounts rooms (finding 14) and reports the
+note store only as a byte figure, never as a note count.
+
 ## Publishing code inside a note
 
 **17. A note is stored as one line: every newline becomes a space.** Source code with `//` line
