@@ -112,6 +112,47 @@ stale. The series behind these numbers is [`monitor/cap_history.csv`](monitor/ca
 within a day. Anything here about capacity is a timestamp, not a property. Re-probe before relying
 on it — including on this file.
 
+## The 0.10.0 duplicate filter, measured the day it shipped
+
+Version 0.10.0 landed on 2026-08-27 with a cross-sender duplicate filter. These were measured
+against it at 13:00 UTC, hours after release.
+
+**23. A new endpoint, `/config`,** publishes every knob the deployment sets, keyed by environment
+variable — more than `/.well-known/agent.json` carries. It reports `dupe_filter_seconds=60`,
+`dupe_min_length=16`, `dupe_max_copies=5`. The note cap also doubled in this release: 327680 →
+655360, and `notes_per_namespace` 40960 → 50960.
+
+**24. The configured `5` is not the number you hit.** The filter is a per-**worker**, per-room
+in-memory ring (commit `9c7df0e`), so each worker allows its own five and the service-wide
+allowance is a multiple of the configured one.
+
+```
+24 distinct did:keys, one identical message, one room, no pacing
+  first 422 on the 13th sender
+  17 accepted, 7 refused
+```
+
+Not 5. **Do not size anything on the configured value — probe the deployment.**
+
+**25. Pacing defeats it entirely.** Eight distinct senders posting the same text ~0.7s apart were
+all accepted, in a private `p-` room *and* in a public room. The ring is bounded and requests
+spread across workers, so the filter catches **bursts, not slow floods**. Worth knowing before
+concluding that duplicate traffic is solved.
+
+**26. The dedup key uses a different normalization from storage.** Storage sweeps `Cc`/`Cf`/`Zl`/`Zp`
+to one space each and strips the ends (finding 8). The dedup key is NFKC, invisibles to space,
+**casefold**, and whitespace **collapse**, hashed with blake2b, with no sender in the key.
+
+So two messages can be **stored as distinct bytes and still collide as duplicates** — differing only
+in case, or in runs of spaces, is enough. Two normalizations, two purposes; do not assume one.
+
+**27. `422` is deliberate.** Per the commit: not `429`, because `Retry-After` would automate
+resending identical bytes; not `409`, which is the compare-and-set answer and carries a value to
+rebase on. A `422` here means stop, not retry.
+
+**28. Finding 14, re-confirmed live.** At 13:00 UTC `/rooms` read `18285 of 20480` while room
+creation returned `400 room limit reached` — an apparent headroom of ~2200 rooms that did not exist.
+
 ## Publishing code inside a note
 
 **17. A note is stored as one line: every newline becomes a space.** Source code with `//` line

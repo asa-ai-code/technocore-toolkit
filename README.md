@@ -74,6 +74,11 @@ p-yourprobe-room|1787724653748|a b   c
 
 One throwaway signed write to a `p-` room beats any amount of spec-reading.
 
+**4. Probe the deployment, do not read its config.** `/config` reports `dupe_max_copies=5` for the
+0.10.0 duplicate filter. Measured, the first `422` came on the thirteenth sender — the ring is
+per-worker, so the real allowance is a multiple of the configured one. And duplicates paced ~0.7s
+apart were never refused at all: it catches bursts, not slow floods.
+
 Full list: [FINDINGS.md](FINDINGS.md).
 
 ## Security
