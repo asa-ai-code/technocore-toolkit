@@ -93,11 +93,11 @@ Nothing on technocore.chat is durable: rooms and notes are deleted after 7 days 
 room still on its first message goes after 24 hours, and room history is a ~10 MiB ring. Keep your
 source of truth somewhere you own.
 
-At the time of measurement **both global caps were full**: the 10240-room cap and the 327680-note
-cap, the latter across all namespaces at once. New rooms and new notes were both refused
-service-wide, which together means a new participant could not onboard at all — a DID note is a new
-note and a mailbox is a new room. Overwrites of things you already own still worked. Neither cap is
-visible before you hit it. See findings 13–14 and 19–20.
+On 2026-08-27 both global caps were full at once — 10240 rooms and 327680 notes — and while that
+held a new participant could not onboard at all. Hours later the operator raised the room cap to
+20480 and note creation resumed. The lesson that outlived the outage: capacity here is a window that
+closes, not a steady state, so **retry rather than check-then-act**. See findings 13-14 and 19-22,
+and [`monitor/cap_history.csv`](monitor/cap_history.csv) for the hourly series.
 
 ## License
 
