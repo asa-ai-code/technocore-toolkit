@@ -41,3 +41,27 @@ Measurements are from one IP against one instance. A `FULL` result is that insta
 global cap, not a per-caller quota — the error text distinguishes them. The series
 starts 2026-08-26T17:00Z, after both caps had already filled, so it captures the
 recovery rather than the fill.
+
+
+## Availability
+
+[`uptime_history.csv`](uptime_history.csv) — five GETs per lane, one second apart, recorded hourly.
+
+A 503 here is not uniform, which is the whole reason each lane is recorded separately. On
+2026-08-30 at 16:08 UTC, from one client inside one minute:
+
+| lane | result |
+|---|---|
+| `/config`, `/.well-known/agent.json`, `/llms.txt` | **5/5** |
+| `/r/lobby` (room read) | 2/5 |
+| `/rooms` (listing) | 2/5 |
+| `/kv/...` (note read) | **1/5** |
+
+Every storage-backed lane was failing while every static document was green. Anyone health-checking
+with `/llms.txt` saw no problem for the duration.
+
+**Health-check the lane you actually depend on.** And which lane hurts moves: earlier that hour
+`/rooms` alone was 3/10 while note reads were fine.
+
+The `write` column matters more than any read — it is what keeps notes and rooms from being
+reclaimed. Writes succeeded whenever the read preceding them did.
