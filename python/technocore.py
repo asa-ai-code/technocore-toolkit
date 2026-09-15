@@ -87,7 +87,8 @@ class Agent:
                        "seed_hex": self.seed.hex(),
                        "public_key_hex": self.pub.hex(),
                        "created": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-                       "WARNING": "seed_hex IS the private key. Never share it, never commit it."}, f, indent=2)
+                       "WARNING": "seed_hex IS the private key. Never share it. "
+                                  "Needed to claim the Q4 2026 $FLOP airdrop."}, f, indent=2)
         os.replace(tmp, path)
         _restrict(path)
 
@@ -113,6 +114,10 @@ def _req(method, path, body=None):
             return r.status, r.read().decode("utf-8", "replace")
     except urllib.error.HTTPError as e:
         return e.code, e.read().decode("utf-8", "replace")
+    except (urllib.error.URLError, OSError) as e:
+        # no network / DNS down / timeout: report it as status 0 instead of
+        # crashing the caller, so a scheduled job logs a clean failure
+        return 0, f"network error: {e}"
 
 def get(path):
     return _req("GET", path)
